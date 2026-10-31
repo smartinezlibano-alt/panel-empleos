@@ -215,6 +215,7 @@ async function cargar() {
   mensaje("");
   $("#lista").innerHTML = `<div class="vacio">Cargando…</div>`;
   try {
+    await gh("");  // sin acceso al repositorio GitHub responde 404, y eso no debe parecer una lista vacía
     const u = await leerJson("usuarios.json");
     datos = u.datos || { usuarios: [] }; shaUsuarios = u.sha;
     const lista = await gh("/contents/estado?ref=main").catch(e => e.status === 404 ? [] : Promise.reject(e));
@@ -234,7 +235,7 @@ async function cargar() {
   } catch (e) {
     $("#lista").innerHTML = "";
     mensaje(e.status === 401 ? "El token no es válido o expiró. Toca <b>⚙️ Conexión</b> y pega uno nuevo."
-          : e.status === 404 ? "No encuentro el repositorio. Revisa el usuario, el nombre del repositorio y que el token tenga acceso a él."
+          : e.status === 404 ? `Este token no tiene acceso al repositorio <b>${esc(CFG.repo)}</b>, así que no puedo mostrar a las personas. Tus datos no se perdieron. Crea un token con ese repositorio seleccionado y pégalo en <b>⚙️ Conexión</b>.`
           : `No pude cargar los datos: ${esc(e.message)}`, "bad");
   }
 }
