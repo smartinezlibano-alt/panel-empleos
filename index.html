@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Panel Buscador de Empleos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Panel de administración: barra superior → acciones globales → tarjetas de personas → formularios en diálogo */
+:root{
+  --bg:#f1f3f6; --panel:#ffffff; --panel2:#f6f8fa; --fg:#1b2330; --muted:#5d6878; --line:#d5dbe3;
+  --accent:#1f6feb; --accentfg:#ffffff; --ok:#1a7f37; --okbg:#dafbe1; --warn:#9a6700; --warnbg:#fff8c5;
+  --bad:#cf222e; --badbg:#ffebe9; --off:#6e7781; --offbg:#eaeef2;
+  --f-body:"Atkinson Hyperlegible",system-ui,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0e131a; --panel:#161c24; --panel2:#1c232d; --fg:#e5eaf0; --muted:#95a1b1; --line:#2c3643;
+  --accent:#4c8dff; --accentfg:#ffffff; --ok:#3fb950; --okbg:#12261a; --warn:#d29922; --warnbg:#2b2410;
+  --bad:#f85149; --badbg:#2d1214; --off:#8b949e; --offbg:#21262d; color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.45}
+.wrap{max-width:1040px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-right)) 48px max(16px,env(safe-area-inset-left));display:flex;flex-direction:column;gap:16px}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+h1{font-size:1.45rem;margin:0;text-wrap:balance}
+.sp{flex:1}
+.sub{color:var(--muted);font-size:.9rem}
+button,.btn{font:inherit;font-weight:700;font-size:.92rem;border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:8px;padding:8px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;text-decoration:none}
+button:hover{border-color:var(--muted)}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accentfg)}
+button.danger{color:var(--bad)}
+button.small{padding:5px 10px;font-size:.84rem}
+button[disabled]{opacity:.55;cursor:wait}
+.bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.stats{display:flex;gap:18px;flex-wrap:wrap}
+.stat b{font-size:1.25rem;font-variant-numeric:tabular-nums;display:block}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(310px,100%),1fr));gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.card.inactivo{opacity:.72}
+.card h2{margin:0;font-size:1.08rem}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:.78rem;font-weight:700;border-radius:99px;padding:2px 9px;background:var(--offbg);color:var(--off);white-space:nowrap}
+.chip.ok{background:var(--okbg);color:var(--ok)}.chip.warn{background:var(--warnbg);color:var(--warn)}.chip.bad{background:var(--badbg);color:var(--bad)}
+.cargos{display:flex;gap:5px;flex-wrap:wrap}
+.cargo{font-size:.78rem;border:1px solid var(--line);border-radius:6px;padding:1px 7px;color:var(--muted)}
+.acciones{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto}
+.invite{font-family:var(--f-mono);font-size:.78rem;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 8px;word-break:break-all}
+.toggle{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-weight:700;font-size:.88rem}
+.toggle input{width:40px;height:22px;appearance:none;background:var(--line);border-radius:99px;position:relative;cursor:pointer;margin:0;transition:background .2s}
+.toggle input::after{content:"";position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .2s}
+.toggle input:checked{background:var(--ok)}.toggle input:checked::after{left:21px}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--fg);padding:0;width:min(560px,calc(100vw - 32px));max-height:calc(100vh - 32px)}
+dialog::backdrop{background:rgb(0 0 0 / .45)}
+dialog form{display:flex;flex-direction:column;gap:12px;padding:18px}
+dialog h3{margin:0}
+label{display:flex;flex-direction:column;gap:4px;font-weight:700;font-size:.9rem}
+label .sub{font-weight:400}
+input[type=text],input[type=password],input[type=number],textarea{font:inherit;font-size:.95rem;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+textarea{min-height:130px;resize:vertical;font-family:var(--f-mono);font-size:.85rem}
+.fila{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.aviso{border-radius:10px;padding:10px 12px;font-size:.9rem}
+.aviso.warn{background:var(--warnbg)}.aviso.bad{background:var(--badbg)}.aviso.ok{background:var(--okbg)}
+.vacio{text-align:center;padding:40px 16px;color:var(--muted);background:var(--panel);border:1px dashed var(--line);border-radius:12px}
+.runs{display:flex;flex-direction:column;gap:4px;font-size:.85rem}
+.run{display:flex;gap:8px;align-items:center}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--off);flex:none}
+.dot.ok{background:var(--ok)}.dot.bad{background:var(--bad)}.dot.warn{background:var(--warn)}
+#toast{position:fixed;left:50%;bottom:max(20px,env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:700;font-size:.9rem;z-index:9;max-width:calc(100vw - 32px)}
+code{font-family:var(--f-mono);font-size:.85em;background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:0 5px}
+ol{margin:0;padding-left:20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Buscador de empleos · Panel</h1>
+    <span class="sp"></span>
+    <button id="btn-config" title="Conexión con GitHub">⚙️ Conexión</button>
+    <button class="primary" id="btn-nuevo">＋ Agregar persona</button>
+  </header>
+
+  <div id="msg"></div>
+
+  <section class="bar" aria-label="Resumen y acciones">
+    <div class="stats">
+      <div class="stat"><span class="sub">Personas</span><b id="st-total">–</b></div>
+      <div class="stat"><span class="sub">Activas</span><b id="st-activas">–</b></div>
+      <div class="stat"><span class="sub">Con Telegram</span><b id="st-tg">–</b></div>
+      <div class="stat"><span class="sub">Gasto Claude este mes</span><b id="st-gasto">–</b></div>
+    </div>
+    <span class="sp"></span>
+    <button id="btn-buscar" title="Hace la búsqueda diaria ahora para todas las personas activas">▶ Buscar ahora</button>
+    <button id="btn-inscr" title="Revisa si alguien abrió su link de invitación">🔄 Revisar inscripciones</button>
+    <button id="btn-recargar" title="Volver a cargar los datos">↻</button>
+  </section>
+
+  <section class="bar" aria-label="Últimas ejecuciones" style="align-items:flex-start">
+    <div style="flex:1;min-width:240px"><b style="font-size:.9rem">Últimas ejecuciones</b><div class="runs" id="runs"><span class="sub">–</span></div></div>
+  </section>
+
+  <section id="lista" class="grid" aria-live="polite"></section>
+</div>
+
+<!-- Conexión -->
+<dialog id="dlg-config">
+  <form method="dialog" id="form-config">
+    <h3>Conexión con GitHub</h3>
+    <p class="sub" style="margin:0">El panel guarda y lee los datos en tu repositorio privado. Necesita un <b>token</b> de GitHub, que se guarda solo en este navegador.</p>
+    <details><summary class="sub" style="cursor:pointer">¿Cómo creo el token?</summary>
+      <ol class="sub" style="margin-top:6px">
+        <li>GitHub → tu foto → <b>Settings</b> → <b>Developer settings</b> → <b>Personal access tokens</b> → <b>Fine-grained tokens</b> → <b>Generate new token</b>.</li>
+        <li>Nombre: <code>panel</code>. Expiración: 1 año. <b>Repository access</b>: <i>Only select repositories</i> → <code>buscador_empleos</code>.</li>
+        <li><b>Permissions</b>: <i>Contents</i> = Read and write, <i>Actions</i> = Read and write.</li>
+        <li><b>Generate token</b>, cópialo y pégalo aquí abajo.</li>
+      </ol></details>
+    <label>Token de GitHub<input type="password" id="cfg-token" autocomplete="off" placeholder="github_pat_…" required></label>
+    <label>Usuario dueño del repositorio<input type="text" id="cfg-owner" required></label>
+    <label>Repositorio<input type="text" id="cfg-repo" required></label>
+    <label>Bot de Telegram <span class="sub">(sin @)</span><input type="text" id="cfg-bot" required></label>
+    <div class="fila"><button type="button" class="danger" id="cfg-borrar">Olvidar token</button><span class="sp"></span><button value="cancel" formnovalidate>Cancelar</button><button class="primary" value="ok">Guardar</button></div>
+  </form>
+</dialog>
+
+<!-- Alta / edición -->
+<dialog id="dlg-persona">
+  <form method="dialog" id="form-persona">
+    <h3 id="persona-titulo">Agregar persona</h3>
+    <label>Nombre completo<input type="text" id="p-nombre" required></label>
+    <label>CV en PDF <span class="sub" id="p-cv-nota">Al elegirlo, Claude lo lee y propone los cargos.</span><input type="file" id="p-cv" accept="application/pdf"></label>
+    <div class="aviso" id="p-ia" aria-live="polite" hidden></div>
+    <label>Cargos que busca <span class="sub">Uno por línea. Revísalos: puedes borrar, cambiar o agregar los que quieras.</span>
+      <textarea id="p-cargos" required placeholder="jefe de finanzas&#10;controller financiero&#10;analista de control de gestion"></textarea></label>
+    <div><button type="button" class="small" id="p-sugerir">✨ Sugerir cargos desde el CV</button></div>
+    <label>% mínimo de compatibilidad<input type="number" id="p-minimo" min="0" max="100" value="50" required></label>
+    <label class="toggle" style="flex-direction:row"><input type="checkbox" id="p-activo" checked> Activo (recibe avisos)</label>
+    <p class="aviso warn" style="margin:0">Pide su autorización antes de inscribirla: recibirá un mensaje diario de Telegram, su CV quedará guardado en tu repositorio privado y lo leerá Claude, la IA de Anthropic.</p>
+    <div class="fila"><button value="cancel" formnovalidate>Cancelar</button><button class="primary" value="ok" id="p-guardar">Guardar</button></div>
+  </form>
+</dialog>
+
+<!-- Confirmar borrado -->
+<dialog id="dlg-borrar">
+  <form method="dialog">
+    <h3>¿Eliminar a <span id="borrar-nombre"></span>?</h3>
+    <p class="sub" style="margin:0">Se borra de la lista y se elimina su CV. Dejará de recibir avisos. Si solo quieres pausarla, mejor desactívala.</p>
+    <div class="fila"><button value="cancel">Cancelar</button><button class="danger" value="ok">Eliminar</button></div>
+  </form>
+</dialog>
+
+<!-- Invitación -->
+<dialog id="dlg-invitar">
+  <form method="dialog">
+    <h3>Invitación para <span id="inv-nombre"></span></h3>
+    <p class="sub" style="margin:0">Esta invitación también te llega a tu Telegram para que la reenvíes. Al abrir el link y tocar <b>Iniciar</b> en Telegram queda inscrita (se confirma en menos de una hora, o al tocar “Revisar inscripciones”).</p>
+    <textarea id="inv-texto" readonly style="min-height:150px;font-family:var(--f-body)"></textarea>
+    <div class="fila"><button type="button" id="inv-copiar">📋 Copiar mensaje</button><button value="ok" class="primary">Listo</button></div>
+  </form>
+</dialog>
+
+<div id="toast" hidden></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const DEF = { owner: "smartinezlibano-alt", repo: "buscador_empleos", bot: "empleos_seba_bot", token: "" };
+let CFG = { ...DEF }, datos = { usuarios: [] }, shaUsuarios = null, estados = {}, editando = null, borrando = null;
+
+try { CFG = { ...DEF, ...JSON.parse(localStorage.getItem("panel-empleos") || "{}") }; } catch (e) {}
+const guardarCfg = () => { try { localStorage.setItem("panel-empleos", JSON.stringify(CFG)); } catch (e) {} };
+
+function toast(t) { const el = $("#toast"); el.textContent = t; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => el.hidden = true, 3200); }
+function mensaje(html, tipo = "warn") { $("#msg").innerHTML = html ? `<div class="aviso ${tipo}">${html}</div>` : ""; }
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+// ---- GitHub API ----
+async function gh(ruta, opciones = {}) {
+  const r = await fetch(`https://api.github.com/repos/${CFG.owner}/${CFG.repo}${ruta}`, {
+    cache: "no-store",  // siempre lo último: el panel espera archivos que escriben los procesos de GitHub
+    ...opciones,
+    headers: { Authorization: `Bearer ${CFG.token}`, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", ...(opciones.headers || {}) },
+  });
+  if (r.status === 204) return null;
+  const cuerpo = await r.json().catch(() => ({}));
+  if (!r.ok) { const e = new Error(cuerpo.message || `Error ${r.status}`); e.status = r.status; throw e; }
+  return cuerpo;
+}
+const aBase64 = texto => { const b = new TextEncoder().encode(texto); let s = ""; b.forEach(x => s += String.fromCharCode(x)); return btoa(s); };
+const deBase64 = b64 => new TextDecoder().decode(Uint8Array.from(atob(b64.replace(/\n/g, "")), c => c.charCodeAt(0)));
+const archivoBase64 = f => new Promise((ok, mal) => { const r = new FileReader(); r.onload = () => ok(r.result.split(",")[1]); r.onerror = mal; r.readAsDataURL(f); });
+
+async function leerJson(ruta) {
+  try { const a = await gh(`/contents/${ruta}?ref=main`); return { datos: JSON.parse(deBase64(a.content)), sha: a.sha }; }
+  catch (e) { if (e.status === 404) return { datos: null, sha: null }; throw e; }
+}
+
+// Guarda usuarios.json aplicando `cambio` sobre la versión más reciente (reintenta si otro la cambió).
+async function cambiarUsuarios(cambio, mensajeCommit) {
+  for (let i = 0; i < 3; i++) {
+    const actual = await leerJson("usuarios.json");
+    const base = actual.datos || { usuarios: [] };
+    cambio(base);
+    try {
+      await gh("/contents/usuarios.json", { method: "PUT", body: JSON.stringify({ message: mensajeCommit, content: aBase64(JSON.stringify(base, null, 1) + "\n"), sha: actual.sha || undefined, branch: "main" }) });
+      return;
+    } catch (e) { if (e.status !== 409 && e.status !== 422) throw e; }
+  }
+  throw new Error("Otro cambio se guardó al mismo tiempo. Recarga e intenta de nuevo.");
+}
+
+// ---- Carga ----
+async function cargar() {
+  if (!CFG.token) { mensaje("Para empezar, toca <b>⚙️ Conexión</b> y pega tu token de GitHub."); pintar(); return; }
+  mensaje("");
+  $("#lista").innerHTML = `<div class="vacio">Cargando…</div>`;
+  try {
+    const u = await leerJson("usuarios.json");
+    datos = u.datos || { usuarios: [] }; shaUsuarios = u.sha;
+    const lista = await gh("/contents/estado?ref=main").catch(e => e.status === 404 ? [] : Promise.reject(e));
+    estados = {};
+    await Promise.all(lista.filter(f => f.name.endsWith(".json") && !f.name.startsWith("_")).map(async f => {
+      const id = f.name.replace(/\.json$/, "");
+      try { const r = await leerJson(`estado/${f.name}`); const e = r.datos || {}; estados[id] = { chat_id: e.chat_id, baja: e.baja_por_usuario, perfil: !!e.perfil, perfil_cv: e.perfil_cv, ultimo_envio: e.ultimo_envio, ultimo_resultado: e.ultimo_resultado, cargo: e.perfil?.cargo_actual }; } catch (e) {}
+    }));
+    const gasto = await leerJson("gasto_claude.json");
+    const mes = new Date().toISOString().slice(0, 7);
+    const sugerencias = await gh("/contents/sugerencias?ref=main").catch(e => e.status === 404 ? [] : Promise.reject(e));
+    const costos = await Promise.all(sugerencias.map(f => leerJson(f.path).then(r => r.datos?.fecha?.startsWith(mes) ? (r.datos.costo || 0) : 0)));
+    const total = (gasto.datos?.[mes] || 0) + costos.reduce((a, b) => a + b, 0);
+    $("#st-gasto").textContent = `US$${total.toFixed(2)}`;
+    pintar();
+    cargarRuns();
+  } catch (e) {
+    $("#lista").innerHTML = "";
+    mensaje(e.status === 401 ? "El token no es válido o expiró. Toca <b>⚙️ Conexión</b> y pega uno nuevo."
+          : e.status === 404 ? "No encuentro el repositorio. Revisa el usuario, el nombre del repositorio y que el token tenga acceso a él."
+          : `No pude cargar los datos: ${esc(e.message)}`, "bad");
+  }
+}
+
+async function cargarRuns() {
+  try {
+    const r = await gh("/actions/runs?per_page=6");
+    $("#runs").innerHTML = r.workflow_runs.map(w => {
+      const c = w.status !== "completed" ? "warn" : w.conclusion === "success" ? "ok" : "bad";
+      const estado = w.status !== "completed" ? "en curso…" : w.conclusion === "success" ? "ok" : "falló";
+      const fecha = new Date(w.created_at).toLocaleString("es-CL", { dateStyle: "short", timeStyle: "short" });
+      return `<div class="run"><span class="dot ${c}"></span><span>${esc(w.name)}</span><span class="sub">· ${fecha} · ${estado}</span> <a class="sub" href="${esc(w.html_url)}" target="_blank" rel="noopener">ver</a></div>`;
+    }).join("") || `<span class="sub">Sin ejecuciones todavía.</span>`;
+  } catch (e) { $("#runs").innerHTML = `<span class="sub">No pude leer las ejecuciones (revisa que el token tenga permiso de Actions).</span>`; }
+}
+
+// ---- Pintar ----
+function estadoChips(u) {
+  const e = estados[u.id] || {}, chips = [];
+  chips.push(u.activo ? `<span class="chip ok">Activo</span>` : `<span class="chip">Inactivo</span>`);
+  if (e.baja) chips.push(`<span class="chip bad">Se dio de baja (/stop)</span>`);
+  else if (e.chat_id) chips.push(`<span class="chip ok">Telegram conectado</span>`);
+  else chips.push(`<span class="chip warn">Falta abrir la invitación</span>`);
+  if (!u.cv) chips.push(`<span class="chip bad">Sin CV</span>`);
+  else if (e.perfil && e.perfil_cv === u.cv_version) chips.push(`<span class="chip ok">Perfil listo</span>`);
+  else chips.push(`<span class="chip warn">Perfil se arma en la próxima búsqueda</span>`);
+  return chips.join("");
+}
+
+function pintar() {
+  const us = datos.usuarios || [];
+  $("#st-total").textContent = us.length;
+  $("#st-activas").textContent = us.filter(u => u.activo).length;
+  $("#st-tg").textContent = us.filter(u => estados[u.id]?.chat_id && !estados[u.id]?.baja).length;
+  if (!CFG.token) { $("#lista").innerHTML = ""; return; }
+  if (!us.length) { $("#lista").innerHTML = `<div class="vacio">Todavía no hay personas. Toca <b>＋ Agregar persona</b> para inscribir a la primera.</div>`; return; }
+  $("#lista").innerHTML = us.map(u => {
+    const e = estados[u.id] || {};
+    const ult = e.ultimo_envio ? `Último envío: ${esc(e.ultimo_envio)}${e.ultimo_resultado ? ` · ${e.ultimo_resultado.recomendados} recomendados de ${e.ultimo_resultado.evaluados} evaluados` : ""}` : "Aún no recibe envíos";
+    return `<article class="card ${u.activo ? "" : "inactivo"}" data-id="${esc(u.id)}">
+      <div style="display:flex;gap:10px;align-items:flex-start">
+        <div style="flex:1;min-width:0"><h2>${esc(u.nombre)}</h2><div class="sub">${esc(e.cargo || "")}</div></div>
+        <label class="toggle" title="Activar o pausar"><input type="checkbox" data-accion="activo" ${u.activo ? "checked" : ""} aria-label="Activo"></label>
+      </div>
+      <div class="chips">${estadoChips(u)}</div>
+      <div class="cargos">${(u.cargos || []).slice(0, 8).map(c => `<span class="cargo">${esc(c)}</span>`).join("")}${(u.cargos || []).length > 8 ? `<span class="cargo">+${u.cargos.length - 8}</span>` : ""}</div>
+      <div class="sub">Mínimo ${esc(u.minimo ?? 50)}% · ${ult}</div>
+      <div class="acciones">
+        <button class="small" data-accion="invitar">✉️ Invitación</button>
+        <button class="small" data-accion="editar">✏️ Editar</button>
+        <button class="small danger" data-accion="borrar">🗑 Eliminar</button>
+      </div></article>`;
+  }).join("");
+}
+
+// ---- Acciones de cada tarjeta ----
+$("#lista").addEventListener("click", ev => {
+  const b = ev.target.closest("[data-accion]"); if (!b || b.dataset.accion === "activo") return;
+  const u = datos.usuarios.find(x => x.id === b.closest(".card").dataset.id); if (!u) return;
+  if (b.dataset.accion === "editar") abrirPersona(u);
+  if (b.dataset.accion === "invitar") abrirInvitacion(u);
+  if (b.dataset.accion === "borrar") { borrando = u; $("#borrar-nombre").textContent = u.nombre; $("#dlg-borrar").showModal(); }
+});
+$("#lista").addEventListener("change", async ev => {
+  if (ev.target.dataset.accion !== "activo") return;
+  const id = ev.target.closest(".card").dataset.id, activo = ev.target.checked;
+  ev.target.disabled = true;
+  try {
+    await cambiarUsuarios(b => { const u = b.usuarios.find(x => x.id === id); if (u) u.activo = activo; }, `${activo ? "Activa" : "Pausa"} a ${id}`);
+    datos.usuarios.find(x => x.id === id).activo = activo; pintar(); toast(activo ? "Activada" : "Pausada");
+  } catch (e) { ev.target.checked = !activo; mensaje(`No se pudo guardar: ${esc(e.message)}`, "bad"); }
+  ev.target.disabled = false;
+});
+
+// ---- Alta / edición ----
+function abrirPersona(u) {
+  editando = u || null;
+  $("#persona-titulo").textContent = u ? `Editar a ${u.nombre}` : "Agregar persona";
+  $("#p-nombre").value = u?.nombre || "";
+  $("#p-cargos").value = (u?.cargos || []).join("\n");
+  $("#p-minimo").value = u?.minimo ?? 50;
+  $("#p-activo").checked = u ? !!u.activo : true;
+  $("#p-cv").value = "";
+  $("#p-cv").required = !u;
+  $("#p-cv-nota").textContent = u ? "Opcional: sube uno nuevo solo si cambió su CV (se vuelve a armar el perfil)." : "Al elegirlo, Claude lo lee y propone los cargos.";
+  estadoIA("");
+  $("#p-sugerir").disabled = false;
+  $("#dlg-persona").showModal();
+}
+const slug = t => t.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 24);
+const azar = n => Array.from(crypto.getRandomValues(new Uint8Array(n)), b => b.toString(16).padStart(2, "0")).join("");
+
+// ---- Sugerir cargos: sube un CV temporal, lo lee Claude en GitHub y el panel espera el resultado ----
+let sugerenciaActual = null;
+function estadoIA(texto, tipo = "warn") {
+  const el = $("#p-ia");
+  el.hidden = !texto; el.textContent = texto; el.className = `aviso ${tipo}`;
+}
+async function sugerirCargos() {
+  const archivo = $("#p-cv").files[0];
+  if (!archivo) { estadoIA("Primero elige el CV en PDF."); return; }
+  if (archivo.size > 5 * 1024 * 1024) { estadoIA("El CV pesa más de 5 MB.", "bad"); return; }
+  const solicitud = azar(8), boton = $("#p-sugerir");
+  sugerenciaActual = solicitud; boton.disabled = true;
+  try {
+    estadoIA("Subiendo el CV…");
+    await gh(`/contents/usuarios/cv/tmp-${solicitud}.pdf`, { method: "PUT", body: JSON.stringify({ message: "CV temporal para sugerir cargos", content: await archivoBase64(archivo), branch: "main" }) });
+    await gh("/actions/workflows/sugerir-cargos.yml/dispatches", { method: "POST", body: JSON.stringify({ ref: "main", inputs: { solicitud } }) });
+    estadoIA("Claude está leyendo el CV. Tarda cerca de 1 minuto…");
+    const limite = Date.now() + 4 * 60 * 1000;
+    while (Date.now() < limite) {
+      await new Promise(listo => setTimeout(listo, 5000));
+      if (sugerenciaActual !== solicitud) return;  // se cerró el formulario o se pidió otra
+      const { datos: r } = await leerJson(`sugerencias/${solicitud}.json`);
+      if (!r) continue;
+      if (sugerenciaActual !== solicitud) return;
+      if (r.error) throw new Error(r.error);
+      const actuales = $("#p-cargos").value.split("\n").map(s => s.trim()).filter(Boolean);
+      const vistos = new Set(actuales.map(s => s.toLowerCase()));
+      const nuevos = r.cargos.filter(c => !vistos.has(c.toLowerCase()));
+      $("#p-cargos").value = [...actuales, ...nuevos].join("\n");
+      estadoIA(`✓ Claude propuso ${nuevos.length} cargos. Revísalos antes de guardar.`, "ok");
+      return;
+    }
+    throw new Error("GitHub está tardando más de lo normal.");
+  } catch (e) {
+    if (sugerenciaActual === solicitud) estadoIA(`No pude sugerir cargos: ${e.message} Puedes reintentar o escribirlos a mano.`, "bad");
+  } finally {
+    if (sugerenciaActual === solicitud) { sugerenciaActual = null; boton.disabled = false; }
+  }
+}
+$("#p-sugerir").addEventListener("click", sugerirCargos);
+$("#p-cv").addEventListener("change", () => { if ($("#p-cv").files[0] && !$("#p-cargos").value.trim()) sugerirCargos(); });
+$("#dlg-persona").addEventListener("close", () => { sugerenciaActual = null; });
+
+$("#form-persona").addEventListener("submit", async ev => {
+  if (ev.submitter?.value !== "ok") return;
+  ev.preventDefault();
+  const boton = $("#p-guardar"); boton.disabled = true; boton.textContent = "Guardando…";
+  try {
+    const nombre = $("#p-nombre").value.trim();
+    const cargos = $("#p-cargos").value.split("\n").map(s => s.trim()).filter(Boolean);
+    const minimo = Math.max(0, Math.min(100, parseInt($("#p-minimo").value, 10) || 50));
+    const activo = $("#p-activo").checked;
+    const archivo = $("#p-cv").files[0];
+    const id = editando ? editando.id : `${slug(nombre) || "persona"}-${azar(2)}`;
+    let cv = editando?.cv, cvVersion = editando?.cv_version;
+    if (archivo) {
+      if (archivo.size > 5 * 1024 * 1024) throw new Error("El CV pesa más de 5 MB.");
+      cv = `usuarios/cv/${id}.pdf`;
+      let sha;
+      try { sha = (await gh(`/contents/${cv}?ref=main`)).sha; } catch (e) { if (e.status !== 404) throw e; }
+      await gh(`/contents/${cv}`, { method: "PUT", body: JSON.stringify({ message: `CV de ${nombre}`, content: await archivoBase64(archivo), sha, branch: "main" }) });
+      cvVersion = new Date().toISOString();
+    }
+    await cambiarUsuarios(b => {
+      b.usuarios = b.usuarios || [];
+      let u = b.usuarios.find(x => x.id === id);
+      if (!u) { u = { id, codigo: azar(4), creado: new Date().toISOString().slice(0, 10) }; b.usuarios.push(u); }
+      Object.assign(u, { nombre, cargos, minimo, activo, cv, cv_version: cvVersion });
+    }, `${editando ? "Edita" : "Agrega"} a ${nombre}`);
+    $("#dlg-persona").close();
+    toast(editando ? "Cambios guardados" : "Persona agregada");
+    const nuevo = !editando;
+    await cargar();
+    if (nuevo) {
+      // El bot manda la invitación al Telegram del administrador; si esto falla, la revisión de cada hora la envía igual
+      gh("/actions/workflows/inscripciones.yml/dispatches", { method: "POST", body: JSON.stringify({ ref: "main" }) }).catch(() => {});
+      toast("Persona agregada: en unos minutos te llega su invitación a Telegram");
+    }
+  } catch (e) { mensaje(`No se pudo guardar: ${esc(e.message)}`, "bad"); }
+  boton.disabled = false; boton.textContent = "Guardar";
+});
+
+// ---- Borrar ----
+$("#dlg-borrar").addEventListener("close", async () => {
+  if ($("#dlg-borrar").returnValue !== "ok" || !borrando) return;
+  const u = borrando; borrando = null;
+  try {
+    await cambiarUsuarios(b => { b.usuarios = b.usuarios.filter(x => x.id !== u.id); }, `Elimina a ${u.nombre}`);
+    if (u.cv) { try { const a = await gh(`/contents/${u.cv}?ref=main`); await gh(`/contents/${u.cv}`, { method: "DELETE", body: JSON.stringify({ message: `Borra CV de ${u.nombre}`, sha: a.sha, branch: "main" }) }); } catch (e) {} }
+    toast("Persona eliminada"); cargar();
+  } catch (e) { mensaje(`No se pudo eliminar: ${esc(e.message)}`, "bad"); }
+});
+
+// ---- Invitación ----
+function abrirInvitacion(u) {
+  if (!u) return;
+  const link = `https://t.me/${CFG.bot}?start=${u.codigo}`;
+  $("#inv-nombre").textContent = u.nombre;
+  $("#inv-texto").value = `Hola ${u.nombre.split(" ")[0]}, te inscribí en el buscador de empleos 🔎\nCada mañana te llegarán por Telegram los avisos que mejor calzan con tu perfil.\n\nPara activarlo, abre este link y toca "Iniciar":\n${link}\n\nSi algún día no quieres recibirlos más, escribe /stop al bot.`;
+  $("#dlg-invitar").showModal();
+}
+$("#inv-copiar").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText($("#inv-texto").value); toast("Mensaje copiado"); }
+  catch (e) { $("#inv-texto").select(); toast("Seleccionado: presiona Ctrl + C"); }
+});
+
+// ---- Ejecutar flujos ----
+async function ejecutar(archivo, boton, texto) {
+  boton.disabled = true;
+  try { await gh(`/actions/workflows/${archivo}/dispatches`, { method: "POST", body: JSON.stringify({ ref: "main" }) }); toast(texto); setTimeout(cargarRuns, 4000); }
+  catch (e) { mensaje(`No se pudo iniciar: ${esc(e.message)}. Revisa que el token tenga permiso de Actions (lectura y escritura).`, "bad"); }
+  boton.disabled = false;
+}
+$("#btn-buscar").addEventListener("click", e => ejecutar("buscador-diario.yml", e.currentTarget, "Búsqueda iniciada: tarda unos 5 a 10 minutos"));
+$("#btn-inscr").addEventListener("click", e => ejecutar("inscripciones.yml", e.currentTarget, "Revisando inscripciones (1 minuto aprox.)"));
+$("#btn-recargar").addEventListener("click", cargar);
+$("#btn-nuevo").addEventListener("click", () => CFG.token ? abrirPersona(null) : $("#btn-config").click());
+
+// ---- Conexión ----
+$("#btn-config").addEventListener("click", () => {
+  $("#cfg-token").value = CFG.token; $("#cfg-owner").value = CFG.owner; $("#cfg-repo").value = CFG.repo; $("#cfg-bot").value = CFG.bot;
+  $("#dlg-config").showModal();
+});
+$("#form-config").addEventListener("submit", ev => {
+  if (ev.submitter?.value !== "ok") return;
+  CFG = { token: $("#cfg-token").value.trim(), owner: $("#cfg-owner").value.trim(), repo: $("#cfg-repo").value.trim(), bot: $("#cfg-bot").value.trim().replace(/^@/, "") };
+  guardarCfg(); cargar();
+});
+$("#cfg-borrar").addEventListener("click", () => { CFG.token = ""; guardarCfg(); $("#dlg-config").close(); datos = { usuarios: [] }; estados = {}; cargar(); toast("Token eliminado de este navegador"); });
+
+cargar();
+</script>
+</body>
+</html>
