@@ -136,6 +136,7 @@ ol{margin:0;padding-left:20px}
     <div><button type="button" class="small" id="p-sugerir">✨ Sugerir cargos desde el CV</button></div>
     <label>% mínimo de compatibilidad<input type="number" id="p-minimo" min="0" max="100" value="50" required></label>
     <label class="toggle" style="flex-direction:row"><input type="checkbox" id="p-activo" checked> Activo (recibe avisos)</label>
+    <label class="toggle" style="flex-direction:row"><input type="checkbox" id="p-consejos" checked> 💡 Consejos semanales para su CV</label>
     <p class="aviso warn" style="margin:0">Pide su autorización antes de inscribirla: recibirá un mensaje diario de Telegram, su CV quedará guardado en tu repositorio privado y lo leerá Claude, la IA de Anthropic.</p>
     <div class="fila"><button value="cancel" formnovalidate>Cancelar</button><button class="primary" value="ok" id="p-guardar">Guardar</button></div>
   </form>
@@ -283,6 +284,7 @@ function pintar() {
       <div class="chips">${estadoChips(u)}</div>
       <div class="cargos">${(u.cargos || []).slice(0, 8).map(c => `<span class="cargo">${esc(c)}</span>`).join("")}${(u.cargos || []).length > 8 ? `<span class="cargo">+${u.cargos.length - 8}</span>` : ""}</div>
       <div class="sub">Mínimo ${esc(u.minimo ?? 50)}% · ${ult}</div>
+      <label class="toggle" style="flex-direction:row;font-weight:400"><input type="checkbox" data-accion="consejos" ${u.consejos !== false ? "checked" : ""}> 💡 Consejos semanales para su CV</label>
       <div class="acciones">
         <button class="small" data-accion="invitar">✉️ Invitación</button>
         <button class="small" data-accion="editar">✏️ Editar</button>
@@ -310,6 +312,18 @@ $("#lista").addEventListener("change", async ev => {
   ev.target.disabled = false;
 });
 
+$("#lista").addEventListener("change", async ev => {
+  if (ev.target.dataset.accion !== "consejos") return;
+  const id = ev.target.closest(".card").dataset.id, consejos = ev.target.checked;
+  ev.target.disabled = true;
+  try {
+    await cambiarUsuarios(b => { const u = b.usuarios.find(x => x.id === id); if (u) u.consejos = consejos; }, `${consejos ? "Activa" : "Desactiva"} consejos de ${id}`);
+    datos.usuarios.find(x => x.id === id).consejos = consejos;
+    toast(consejos ? "Consejos semanales activados" : "Consejos semanales desactivados");
+  } catch (e) { ev.target.checked = !consejos; mensaje(`No se pudo guardar: ${esc(e.message)}`, "bad"); }
+  ev.target.disabled = false;
+});
+
 // ---- Alta / edición ----
 function abrirPersona(u) {
   editando = u || null;
@@ -318,6 +332,7 @@ function abrirPersona(u) {
   $("#p-cargos").value = (u?.cargos || []).join("\n");
   $("#p-minimo").value = u?.minimo ?? 50;
   $("#p-activo").checked = u ? !!u.activo : true;
+  $("#p-consejos").checked = u?.consejos !== false;
   $("#p-cv").value = "";
   $("#p-cv").required = !u;
   $("#p-cv-nota").textContent = u ? "Opcional: sube uno nuevo solo si cambió su CV (se vuelve a armar el perfil)." : "Al elegirlo, Claude lo lee y propone los cargos.";
@@ -380,6 +395,7 @@ $("#form-persona").addEventListener("submit", async ev => {
     const cargos = $("#p-cargos").value.split("\n").map(s => s.trim()).filter(Boolean);
     const minimo = Math.max(0, Math.min(100, parseInt($("#p-minimo").value, 10) || 50));
     const activo = $("#p-activo").checked;
+    const consejos = $("#p-consejos").checked;
     const archivo = $("#p-cv").files[0];
     const id = editando ? editando.id : `${slug(nombre) || "persona"}-${azar(2)}`;
     let cv = editando?.cv, cvVersion = editando?.cv_version;
@@ -395,7 +411,7 @@ $("#form-persona").addEventListener("submit", async ev => {
       b.usuarios = b.usuarios || [];
       let u = b.usuarios.find(x => x.id === id);
       if (!u) { u = { id, codigo: azar(4), creado: new Date().toISOString().slice(0, 10) }; b.usuarios.push(u); }
-      Object.assign(u, { nombre, cargos, minimo, activo, cv, cv_version: cvVersion });
+      Object.assign(u, { nombre, cargos, minimo, activo, consejos, cv, cv_version: cvVersion });
     }, `${editando ? "Edita" : "Agrega"} a ${nombre}`);
     $("#dlg-persona").close();
     toast(editando ? "Cambios guardados" : "Persona agregada");
